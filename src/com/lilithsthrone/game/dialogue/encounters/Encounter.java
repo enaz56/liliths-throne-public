@@ -20,6 +20,7 @@ import com.lilithsthrone.game.character.npc.NPC;
 import com.lilithsthrone.game.character.npc.dominion.Cultist;
 import com.lilithsthrone.game.character.npc.dominion.DominionAlleywayAttacker;
 import com.lilithsthrone.game.character.npc.dominion.DominionSuccubusAttacker;
+import com.lilithsthrone.game.character.npc.dominion.EnforcerPatrol;
 import com.lilithsthrone.game.character.npc.dominion.HarpyNestsAttacker;
 import com.lilithsthrone.game.character.npc.dominion.Lumi;
 import com.lilithsthrone.game.character.npc.dominion.RentalMommy;
@@ -27,6 +28,7 @@ import com.lilithsthrone.game.character.npc.submission.BatMorphCavernAttacker;
 import com.lilithsthrone.game.character.npc.submission.ImpAttacker;
 import com.lilithsthrone.game.character.npc.submission.SlimeCavernAttacker;
 import com.lilithsthrone.game.character.npc.submission.SubmissionAttacker;
+import com.lilithsthrone.game.character.persona.Occupation;
 import com.lilithsthrone.game.character.quests.QuestLine;
 import com.lilithsthrone.game.character.race.Subspecies;
 import com.lilithsthrone.game.combat.spells.Spell;
@@ -34,6 +36,8 @@ import com.lilithsthrone.game.dialogue.DialogueFlagValue;
 import com.lilithsthrone.game.dialogue.DialogueNode;
 import com.lilithsthrone.game.dialogue.companions.SlaveDialogue;
 import com.lilithsthrone.game.dialogue.npcDialogue.dominion.DominionExpressCentaurDialogue;
+import com.lilithsthrone.game.dialogue.npcDialogue.dominion.EnforcerAlleywayDialogue;
+import com.lilithsthrone.game.dialogue.places.dominion.DominionPlaces;
 import com.lilithsthrone.game.dialogue.places.submission.ratWarrens.VengarCaptiveDialogue;
 import com.lilithsthrone.game.inventory.AbstractCoreItem;
 import com.lilithsthrone.game.inventory.InventorySlot;
@@ -48,8 +52,8 @@ import com.lilithsthrone.game.inventory.item.ItemType;
 import com.lilithsthrone.game.inventory.weapon.AbstractWeapon;
 import com.lilithsthrone.game.inventory.weapon.AbstractWeaponType;
 import com.lilithsthrone.game.inventory.weapon.WeaponType;
-import com.lilithsthrone.game.occupantManagement.SlaveJob;
-import com.lilithsthrone.game.occupantManagement.SlavePermissionSetting;
+import com.lilithsthrone.game.occupantManagement.slave.SlaveJob;
+import com.lilithsthrone.game.occupantManagement.slave.SlavePermissionSetting;
 import com.lilithsthrone.main.Main;
 import com.lilithsthrone.utils.Util;
 import com.lilithsthrone.utils.Util.Value;
@@ -269,14 +273,23 @@ public enum Encounter {
 	DOMINION_ALLEY(null) {
 		@Override
 		public Map<EncounterType, Float> getDialogues() {
-			return Util.newHashMapOfValues(
-					new Value<EncounterType, Float>(EncounterType.DOMINION_ALLEY_ATTACK, 15f),
+			Map<EncounterType, Float> map = Util.newHashMapOfValues(
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_ITEM, 3f),
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_CLOTHING, 2f),
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_WEAPON, 1f),
 					getSlaveWantingToUseYouInDominion()!=null && Main.game.getCurrentWeather()!=Weather.MAGIC_STORM
 						?new Value<EncounterType, Float>(EncounterType.SLAVE_USES_YOU, 5f)
 						:null);
+			
+			if(Main.game.isStarted() && DominionPlaces.isCloseToEnforcerHQ()) {
+				map.put(EncounterType.DOMINION_ALLEY_ATTACK, 10f);
+				map.put(EncounterType.DOMINION_ALLEY_ENFORCERS, 15f);
+			} else {
+				map.put(EncounterType.DOMINION_ALLEY_ATTACK, 15f);
+				map.put(EncounterType.DOMINION_ALLEY_ENFORCERS, 2.5f);
+			}
+			
+			return map;
 		}
 		
 		@Override
@@ -359,6 +372,10 @@ public enum Encounter {
 				Main.game.getActiveWorld().getCell(Main.game.getPlayer().getLocation()).getInventory().addWeapon((AbstractWeapon) randomItem);
 				return DominionEncounterDialogue.ALLEY_FIND_ITEM;
 				
+			} else if(node == EncounterType.DOMINION_ALLEY_ENFORCERS && Main.game.getCurrentWeather()!=Weather.MAGIC_STORM) {
+				spawnEnforcers();
+				return EnforcerAlleywayDialogue.ENFORCER_ALLEYWAY_START;
+				
 			} else if(node == EncounterType.SLAVE_USES_YOU && Main.game.getCharactersPresent().isEmpty()) {
 				NPC slave = getSlaveWantingToUseYouInDominion();
 				if(slave==null) {
@@ -404,6 +421,7 @@ public enum Encounter {
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_ITEM, 3f),
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_CLOTHING, 2f),
 					new Value<EncounterType, Float>(EncounterType.DOMINION_FIND_WEAPON, 1f),
+					new Value<EncounterType, Float>(EncounterType.DOMINION_ALLEY_ENFORCERS, 2.5f),
 					getSlaveWantingToUseYouInDominion()!=null && Main.game.getCurrentWeather()!=Weather.MAGIC_STORM
 						?new Value<EncounterType, Float>(EncounterType.SLAVE_USES_YOU, 5f)
 						:null);
@@ -485,6 +503,10 @@ public enum Encounter {
 				
 				Main.game.getActiveWorld().getCell(Main.game.getPlayer().getLocation()).getInventory().addWeapon((AbstractWeapon) randomItem);
 				return DominionEncounterDialogue.ALLEY_FIND_ITEM;
+				
+			} else if(node == EncounterType.DOMINION_ALLEY_ENFORCERS && Main.game.getCurrentWeather()!=Weather.MAGIC_STORM) {
+				spawnEnforcers();
+				return EnforcerAlleywayDialogue.ENFORCER_ALLEYWAY_START;
 				
 			} else if(node == EncounterType.SLAVE_USES_YOU && Main.game.getCharactersPresent().isEmpty()) {
 				NPC slave = getSlaveWantingToUseYouInDominion();
@@ -1040,6 +1062,44 @@ public enum Encounter {
 	
 	;
 	
+	private static void spawnEnforcers() {
+		List<List<String>> savedEnforcerIds = Main.game.getSavedEnforcers(WorldType.DOMINION);
+		
+		// Keep 4 sets of Enforcers saved
+		float chanceOfNewEnforcers = 1f - (0.25f * savedEnforcerIds.size());
+		if(Math.random()<chanceOfNewEnforcers) {
+			try {
+				List<String> enforcerIds = new ArrayList<>();
+				EnforcerPatrol npc = new EnforcerPatrol(Occupation.NPC_ENFORCER_PATROL_CONSTABLE, Gender.getGenderFromUserPreferences(false, false));
+				Main.game.addNPC(npc, false);
+				npc.setLevel(9+Util.random.nextInt(4)); // 9-12
+				((EnforcerPatrol)npc).setWeapons("dsg_eep_pbweap_pbpistol");
+				enforcerIds.add(npc.getId());
+				
+				EnforcerPatrol npc2 = new EnforcerPatrol(Occupation.NPC_ENFORCER_PATROL_CONSTABLE, Gender.getGenderFromUserPreferences(false, false));
+				Main.game.addNPC(npc2, false);
+				npc2.setLevel(4+Util.random.nextInt(5)); // 4-8
+				((EnforcerPatrol)npc2).setWeapons("dsg_eep_taser_taser");
+				enforcerIds.add(npc2.getId());
+				
+				Main.game.addSavedEnforcers(WorldType.DOMINION, enforcerIds);
+				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		} else {
+			List<String> enforcerIds = Util.randomItemFrom(savedEnforcerIds);
+			for(String id : enforcerIds) {
+				try {
+					Main.game.getNPCById(id).setLocation(Main.game.getPlayer(), false);
+				} catch (Exception e) {
+					System.err.println("Error in Encounter.spawnEnforcers()");
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
 	private static DialogueNode SpawnAndStartChildHere(List<NPC> offspringAvailable) {
 		NPC offspring = offspringAvailable.get(Util.random.nextInt(offspringAvailable.size()));
 		Main.game.getOffspringSpawned().add(offspring);
@@ -1124,17 +1184,6 @@ public enum Encounter {
 	}
 
 	protected DialogueNode getBaseRandomEncounter(boolean forceEncounter) {
-		float r = (float) (Math.random() * 100);
-		float total = 0;
-		
-		if(forceEncounter) {
-			r = 0;
-			for (Entry<EncounterType, Float> e : getDialogues().entrySet()) {
-				r += e.getValue();
-			}
-			r *= Math.random();
-		}
-
 		float opportunisticMultiplier = 1;
 		if(Main.game.isOpportunisticAttackersEnabled()) {
 			// lust: linear boost; 25% max
@@ -1142,51 +1191,59 @@ public enum Encounter {
 			// health: linear boost; 25% (theoretical) max
 			opportunisticMultiplier += 0.25f - Main.game.getPlayer().getHealthPercentage() * 0.25f;
 			// smelly body: 25% boost
-			if(Main.game.getPlayer().hasStatusEffect(StatusEffect.BODY_CUM)
-					|| Main.game.getPlayer().hasStatusEffect(StatusEffect.BODY_CUM_MASOCHIST))
+			if(Main.game.getPlayer().hasStatusEffect(StatusEffect.BODY_CUM) || Main.game.getPlayer().hasStatusEffect(StatusEffect.BODY_CUM_MASOCHIST)) {
 				opportunisticMultiplier += 0.25f;
+			}
 			// smelly clothes: 25% boost
-			if(Main.game.getPlayer().hasStatusEffect(StatusEffect.CLOTHING_CUM)
-					|| Main.game.getPlayer().hasStatusEffect(StatusEffect.CLOTHING_CUM_MASOCHIST))
+			if(Main.game.getPlayer().hasStatusEffect(StatusEffect.CLOTHING_CUM) || Main.game.getPlayer().hasStatusEffect(StatusEffect.CLOTHING_CUM_MASOCHIST)) {
 				opportunisticMultiplier += 0.25f;
+			}
 			// exposure: 50% or 75% boost
-			if(!Collections.disjoint(Util.newArrayListOfValues(
-					StatusEffect.EXPOSED,
-					StatusEffect.EXPOSED_BREASTS,
-					StatusEffect.FETISH_EXHIBITIONIST,
-					StatusEffect.FETISH_EXHIBITIONIST_BREASTS
-			), Main.game.getPlayer().getStatusEffects()))
-				opportunisticMultiplier += 0.5f;
-			if(!Collections.disjoint(Util.newArrayListOfValues(
-					StatusEffect.EXPOSED_PLUS_BREASTS,
-					StatusEffect.FETISH_EXHIBITIONIST_PLUS_BREASTS
-			), Main.game.getPlayer().getStatusEffects()))
+			if(!Collections.disjoint(
+					Util.newArrayListOfValues(
+						StatusEffect.EXPOSED_PLUS_BREASTS,
+						StatusEffect.FETISH_EXHIBITIONIST_PLUS_BREASTS),
+					Main.game.getPlayer().getStatusEffects())) {
 				opportunisticMultiplier += 0.75f;
-			// drunk: 50% boost
-			if(!Collections.disjoint(Util.newArrayListOfValues(
-					StatusEffect.DRUNK_3,
-					StatusEffect.DRUNK_4,
-					StatusEffect.DRUNK_5
-			), Main.game.getPlayer().getStatusEffects()))
+				
+			} else if(!Collections.disjoint(
+					Util.newArrayListOfValues(
+						StatusEffect.EXPOSED,
+						StatusEffect.EXPOSED_BREASTS,
+						StatusEffect.FETISH_EXHIBITIONIST,
+						StatusEffect.FETISH_EXHIBITIONIST_BREASTS),
+					Main.game.getPlayer().getStatusEffects())) {
 				opportunisticMultiplier += 0.5f;
-		}
-
-		for (Entry<EncounterType, Float> e : getDialogues().entrySet()) {
-			EncounterType encounter = e.getKey();
-			float encounterChance = e.getValue();
-			// opportunistic attackers: compare with amplified chance
-			if(encounter.isOpportunistic()) {
-				encounterChance *= opportunisticMultiplier;
 			}
-			if (r <= total + encounterChance) {
-				return initialiseEncounter(encounter);
-			}
-			// add unmodified chance
-			total += e.getValue();
-			if (r <= total) {
-				return initialiseEncounter(e.getKey());
+			// drunk: 50% boost
+			if(!Collections.disjoint(
+					Util.newArrayListOfValues(
+						StatusEffect.DRUNK_3,
+						StatusEffect.DRUNK_4,
+						StatusEffect.DRUNK_5),
+					Main.game.getPlayer().getStatusEffects())) {
+				opportunisticMultiplier += 0.5f;
 			}
 		}
+		
+		float total = 0;
+		float opportunisticIncrease = 0;
+		Map<EncounterType, Float> finalMap = new HashMap<>();
+		for(Entry<EncounterType, Float> e : getDialogues().entrySet()) { // Iterate through the base encounter map, apply opportunisticMultiplier if applicable, and create a new 'finalMap' of these weighted chances.
+			float weighting = e.getValue();
+			if(e.getKey().isOpportunistic()) {
+				weighting *= opportunisticMultiplier;
+				opportunisticIncrease+=opportunisticMultiplier;
+			}
+			total+=weighting;
+			finalMap.put(e.getKey(), weighting);
+		}
+		
+		if(forceEncounter || Math.random()*(100+opportunisticIncrease)<total) {
+			EncounterType encounter = Util.getRandomObjectFromWeightedFloatMap(finalMap);
+			return initialiseEncounter(encounter);
+		}
+		
 
 		return null;
 	}

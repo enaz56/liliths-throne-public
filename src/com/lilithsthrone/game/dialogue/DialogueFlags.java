@@ -11,7 +11,7 @@ import com.lilithsthrone.game.character.CharacterUtils;
 import com.lilithsthrone.game.character.GameCharacter;
 import com.lilithsthrone.game.character.npc.NPC;
 import com.lilithsthrone.game.dialogue.places.dominion.helenaHotel.HelenaConversationTopic;
-import com.lilithsthrone.game.occupantManagement.SlaveJob;
+import com.lilithsthrone.game.occupantManagement.slave.SlaveJob;
 import com.lilithsthrone.main.Main;
 import com.lilithsthrone.utils.Util;
 import com.lilithsthrone.utils.Vector2i;
@@ -113,7 +113,7 @@ public class DialogueFlags implements XMLSaving {
 		murkPlayerTfStage = 0;
 		murkCompanionTfStage = 0;
 		
-		natalyaCollarColour = PresetColour.CLOTHING_STEEL;
+		natalyaCollarColour = PresetColour.CLOTHING_BRONZE;
 		natalyaPoints = 0;
 		sadistNatalyaSlave = "";
 	}
@@ -232,6 +232,9 @@ public class DialogueFlags implements XMLSaving {
 
 		try {
 			newFlags.natalyaCollarColour = PresetColour.getColourFromId(((Element)parentElement.getElementsByTagName("natalyaCollarColour").item(0)).getAttribute("value"));
+			if(newFlags.natalyaCollarColour==PresetColour.CLOTHING_STEEL) {
+				newFlags.natalyaCollarColour = PresetColour.CLOTHING_BRONZE;
+			}
 			newFlags.natalyaPoints = Integer.valueOf(((Element)parentElement.getElementsByTagName("natalyaPoints").item(0)).getAttribute("value"));
 			newFlags.sadistNatalyaSlave = ((Element)parentElement.getElementsByTagName("sadistNatalyaSlave").item(0)).getAttribute("value");
 		} catch(Exception ex) {

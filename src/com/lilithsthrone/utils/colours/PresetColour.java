@@ -16,6 +16,23 @@ import com.lilithsthrone.utils.Util;
 public class PresetColour {
 	
 	// This class and BaseColour are beyond saving x_x
+	public static Colour BASE_FREEDOM = new Colour(false, BaseColour.RED,
+			"<span style='color:#EA5D76;'>f</span>"
+			+ "<span style='color:#FFFFFF;'>r</span>"
+			+ "<span style='color:#0090BF;'>e</span>"
+			+ "<span style='color:#EA5D76;'>e</span>"
+			+ "<span style='color:#FFFFFF;'>d</span>"
+			+ "<span style='color:#0090BF;'>o</span>"
+			+ "<span style='color:#EA5D76;'>m</span>", 
+			Util.newArrayListOfValues("freedom", "america", "usa")) {
+		@Override
+		public List<String> getRainbowColours() {
+			return Util.newArrayListOfValues(
+					"#EA5D76",
+					"#FFFFFF",
+					"#0090BF");
+		}
+	};
 	
 	public static Colour BASE_WHITE = new Colour(false, BaseColour.WHITE, "white", Util.newArrayListOfValues("white")) {};
 
@@ -99,6 +116,7 @@ public class PresetColour {
 	public static Colour GENERIC_MINOR_BAD = new Colour(false, BaseColour.RED_LIGHT, "red", Util.newArrayListOfValues("minorBad", "badMinor")) {};
 	public static Colour GENERIC_MINOR_GOOD = new Colour(false, BaseColour.GREEN_LIGHT, "light green", Util.newArrayListOfValues("minorGood", "goodMinor")) {};
 	public static Colour GENERIC_BAD = new Colour(false, BaseColour.RED, "red", Util.newArrayListOfValues("bad")) {};
+	public static Colour GENERIC_NEUTRAL = new Colour(false, BaseColour.BLUE, "blue", Util.newArrayListOfValues("neutral")) {};
 	public static Colour GENERIC_GOOD = new Colour(false, BaseColour.GREEN, "green", Util.newArrayListOfValues("good")) {};
 	public static Colour GENERIC_EXCELLENT = new Colour(false, BaseColour.GOLD, "gold", Util.newArrayListOfValues("excellent")) {};
 	public static Colour GENERIC_ATTRIBUTE = new Colour(false, BaseColour.MAGENTA, "magenta") {};
@@ -156,6 +174,8 @@ public class PresetColour {
 	public static Colour RACE_RABBIT_MORPH = new Colour(false, BaseColour.BROWN_DARK, "dark brown", Util.newArrayListOfValues("rabbitMorph", "rabbit")) {};
 	public static Colour RACE_BAT_MORPH = new Colour(false, BaseColour.BLACK, "black", Util.newArrayListOfValues("batMorph", "bat")) {};
 	public static Colour RACE_ALLIGATOR_MORPH = new Colour(false, BaseColour.GREEN_DARK, "dark green", Util.newArrayListOfValues("alligatorMorph", "alligator", "gatorMorph", "gator")) {};
+
+	public static Colour GENERIC_BAD_END = new Colour(false, BaseColour.CRIMSON, "crimson", Util.newArrayListOfValues("badEnd")) {};
 	
 	public static Colour QUEST_MAIN = new Colour(false, BaseColour.PINK, "pink", Util.newArrayListOfValues("questMain", "mainQuest")) {};
 	public static Colour QUEST_SIDE = new Colour(false, BaseColour.BLUE, "blue", Util.newArrayListOfValues("questSide", "sideQuest")) {};
@@ -165,12 +185,15 @@ public class PresetColour {
 
 	public static Colour ATTRIBUTE_HEALTH = new Colour(false, BaseColour.CRIMSON, "crimson", Util.newArrayListOfValues("health", "hp", "energy")) {};
 	public static Colour ATTRIBUTE_MANA = new Colour(false, BaseColour.PURPLE_LIGHT, "light purple", Util.newArrayListOfValues("willpower", "wp", "mana", "aura")) {};
-//	ATTRIBUTE_STAMINA(BaseColour.LILAC, "lilac", Util.newArrayListOfValues("stamina", "sp", "energy")) {};
 
-	public static Colour ATTRIBUTE_PHYSIQUE = new Colour(false, BaseColour.MAGENTA, "magenta", Util.newArrayListOfValues("physique", "phys", "strength", "str")) {};
+	public static Colour ATTRIBUTE_PHYSIQUE = new Colour(false,
+			BaseColour.MAGENTA,
+			"magenta", Util.newArrayListOfValues("physique", "phys", "strength", "str")) {};
 	public static Colour ATTRIBUTE_ARCANE = new Colour(false, BaseColour.PURPLE, "purple", Util.newArrayListOfValues("intelligence", "int")) {};
-//	ATTRIBUTE_FITNESS(BaseColour.LILAC, "light purple", Util.newArrayListOfValues("fitness", "fit")) {};
-	public static Colour ATTRIBUTE_CORRUPTION = new Colour(false, BaseColour.PINK_DEEP, "pink", Util.newArrayListOfValues("corruption", "cor", "corr")) {};
+	public static Colour ATTRIBUTE_CORRUPTION = new Colour(false,
+//			BaseColour.PINK_DEEP,
+			Util.newColour(0xff1a8c), Util.newColour(0xff1a8c),
+			"pink", Util.newArrayListOfValues("corruption", "cor", "corr")) {};
 
 	public static Colour ATTRIBUTE_AROUSAL = new Colour(false, BaseColour.PINK_DEEP, "pink", Util.newArrayListOfValues("arousal", "ars")) {};
 	public static Colour ATTRIBUTE_LUST = new Colour(false, BaseColour.MAGENTA, "magenta", Util.newArrayListOfValues("lust", "lst", "seduction")) {};
@@ -228,6 +251,8 @@ public class PresetColour {
 
 
 	public static Colour COMPANION = new Colour(false, BaseColour.GREEN_LIGHT, "light green", Util.newArrayListOfValues("companion", "companions")) {};
+
+	public static Colour STAMINA = new Colour(false, BaseColour.BLUE_LIGHT, "light blue", Util.newArrayListOfValues("stamina")) {};
 	
 	public static Colour AFFECTION = new Colour(false, BaseColour.PINK_LIGHT, "light pink", Util.newArrayListOfValues("affection")) {};
 	public static Colour OBEDIENCE = new Colour(false, BaseColour.PURPLE_LIGHT, "light purple", Util.newArrayListOfValues("obedience")) {};
@@ -264,7 +289,7 @@ public class PresetColour {
 
 	public static Colour AGE_TEENS = new Colour(false, Util.newColour(0xE1F0C1), Util.newColour(0x73A112), "green", Util.newArrayListOfValues("ageTeens")) {};
 	public static Colour AGE_TWENTIES = new Colour(false, Util.newColour(0xCCE698), Util.newColour(0x638A0F), "green", Util.newArrayListOfValues("ageTwenties")) {};
-	public static Colour AGE_THIRTIES = new Colour(false, Util.newColour(0xB8DC6F), Util.newColour(0x52730D), "green", Util.newArrayListOfValues("ageThirties")) {};
+	public static Colour AGE_THIRTIES = new Colour(false, Util.newColour(0xB8DC6F), Util.newColour(0x52730D), "green", Util.newArrayListOfValues("age", "ageThirties")) {}; // This is the 'default' age colour
 	public static Colour AGE_FORTIES = new Colour(false, Util.newColour(0xA4D246), Util.newColour(0x41590D), "green", Util.newArrayListOfValues("ageForties")) {};
 	public static Colour AGE_FIFTIES = new Colour(false, Util.newColour(0x8AB92D), Util.newColour(0x334408), "green", Util.newArrayListOfValues("ageFifties")) {};
 	public static Colour AGE_SIXTIES = new Colour(false, Util.newColour(0x6B9023), Util.newColour(0x232E05), "green", Util.newArrayListOfValues("ageSixties")) {};
@@ -323,6 +348,10 @@ public class PresetColour {
 	public static Colour FEMININE_PLUS_NPC = new Colour(false, BaseColour.PINK, "pink") {};
 
 	// Combat colours:
+	public static Colour DAMAGE_TYPE_UNARMED = new Colour(false, Util.newColour(0xedd6ba), Util.newColour(0xDC8D2E), "tan", Util.newArrayListOfValues("unarmed")) {};
+	public static Colour DAMAGE_TYPE_MELEE = new Colour(false, Util.newColour(0xea98a1), Util.newColour(0xDD1D40), "light red", Util.newArrayListOfValues("melee")) {};
+	public static Colour DAMAGE_TYPE_RANGED = new Colour(false, Util.newColour(0xd2f2ff), Util.newColour(0x00A7D1), "light blue", Util.newArrayListOfValues("ranged")) {};
+	
 	public static Colour DAMAGE_TYPE_PHYSICAL = new Colour(false, Util.newColour(0xA79E90), Util.newColour(0x5C4D42), "grey-brown", Util.newArrayListOfValues("dmgPhysical", "resPhysical", "physical")) {};
 	public static Colour DAMAGE_TYPE_MANA = new Colour(false, BaseColour.PURPLE_LIGHT, "purple", Util.newArrayListOfValues("dmgMana", "resMana")) {};
 	public static Colour DAMAGE_TYPE_LUST = new Colour(false, BaseColour.PINK_LIGHT, "light pink", Util.newArrayListOfValues("dmgLust", "resLust")) {};
@@ -370,13 +399,13 @@ public class PresetColour {
 	public static Colour ANUS = new Colour(false, BaseColour.PINK_DEEP, "deep pink", Util.newArrayListOfValues("asshole", "anus", "ass")) {};
 	public static Colour PENIS = new Colour(false, BaseColour.PURPLE, "purple", Util.newArrayListOfValues("penis", "cock")) {};
 	public static Colour NIPPLES = new Colour(false, BaseColour.PINK_LIGHT, "light pink", Util.newArrayListOfValues("nipples", "nipple")) {};
-	public static Colour NIPPLES_CROTCH = new Colour(false, BaseColour.PURPLE_LIGHT, "light purple", Util.newArrayListOfValues("nipplesCrotch", "crotchNipples")) {};
+	public static Colour NIPPLES_CROTCH = new Colour(false, BaseColour.PURPLE_LIGHT, "light purple", Util.newArrayListOfValues("nipplesCrotch", "crotchNipples", "nippleCrotch", "crotchNipple")) {};
 	public static Colour URETHRA_PENIS = new Colour(false, BaseColour.PINK_SALMON, "salmon-pink", Util.newArrayListOfValues("penisUrethra", "urethraPenis", "urethra")) {};
 	public static Colour UREHTRA_VAGINA = new Colour(false, BaseColour.LILAC, "lilac", Util.newArrayListOfValues("vaginaUrethra", "urethraVagina")) {};
 	public static Colour MOUTH = new Colour(false, BaseColour.LILAC_LIGHT, "pale lilac", Util.newArrayListOfValues("mouth", "throat")) {};
 
 	public static Colour DIRTY = new Colour(false, BaseColour.YELLOW_LIGHT, "light yellow", Util.newArrayListOfValues("dirty")) {};
-	public static Colour SEALED = new Colour(false, BaseColour.PINK_DEEP, "pink", Util.newArrayListOfValues("sealed")) {};
+	public static Colour SEALED = new Colour(false, BaseColour.PINK_DEEP, "pink", Util.newArrayListOfValues("seal", "sealed")) {};
 	public static Colour DISPLACED = new Colour(false, BaseColour.CRIMSON, "crimson", Util.newArrayListOfValues("displaced")) {};
 
 	// Text colours:
@@ -595,7 +624,8 @@ public class PresetColour {
 			+ "<span style='color:#6EE64C;'>n</span>"
 			+ "<span style='color:#4CB2E6;'>b</span>"
 			+ "<span style='color:#AD4CE6;'>o</span>"
-			+ "<span style='color:#E64CA8;'>w</span>") {
+			+ "<span style='color:#E64CA8;'>w</span>", 
+			Util.newArrayListOfValues("rainbow")) {
 		@Override
 		public List<String> getRainbowColours() {
 			return Util.newArrayListOfValues(
@@ -622,7 +652,8 @@ public class PresetColour {
 			+ "<span style='color:#7bd8b0;'>n</span>"
 			+ "<span style='color:#83a5ef;'>b</span>"
 			+ "<span style='color:#ecb6f9;'>o</span>"
-			+ "<span style='color:#4bb1d0;'>w</span>") {
+			+ "<span style='color:#4bb1d0;'>w</span>", 
+			Util.newArrayListOfValues("pastelRainbow")) {
 		@Override
 		public List<String> getRainbowColours() {
 			return Util.newArrayListOfValues(
@@ -764,6 +795,7 @@ public class PresetColour {
 			PresetColour.COVERING_GREY,
 			PresetColour.COVERING_BLACK,
 			PresetColour.COVERING_JET_BLACK,
+			PresetColour.COVERING_SCARLET,
 			PresetColour.COVERING_RED_LIGHT,
 			PresetColour.COVERING_RED,
 			PresetColour.COVERING_RED_DARK,
@@ -809,6 +841,7 @@ public class PresetColour {
 			PresetColour.COVERING_GREY,
 			PresetColour.COVERING_BLACK,
 			PresetColour.COVERING_JET_BLACK,
+			PresetColour.COVERING_SCARLET,
 			PresetColour.COVERING_RED_LIGHT,
 			PresetColour.COVERING_RED,
 			PresetColour.COVERING_RED_DARK,
@@ -882,6 +915,7 @@ public class PresetColour {
 			PresetColour.COVERING_GREY,
 			PresetColour.COVERING_BLACK,
 			PresetColour.COVERING_JET_BLACK,
+			PresetColour.COVERING_SCARLET,
 			PresetColour.COVERING_RED_LIGHT,
 			PresetColour.COVERING_RED,
 			PresetColour.COVERING_RED_DARK,

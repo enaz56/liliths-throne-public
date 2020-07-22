@@ -248,11 +248,12 @@ public class PlaceType {
 			List<Population> pop = new ArrayList<>();
 			
 			if(Main.game.getCurrentWeather()==Weather.MAGIC_STORM) {
-				pop.add(new Population(true, PopulationType.PERSON, PopulationDensity.COUPLE, Subspecies.getWorldSpecies(WorldType.DOMINION, true)));
-				pop.add(new Population(true, PopulationType.ENFORCER, PopulationDensity.SEVERAL, Subspecies.getDominionStormImmuneSpecies(true, Subspecies.HUMAN)));
+				pop.add(new Population(true, PopulationType.PERSON, PopulationDensity.COUPLE, Subspecies.getDominionStormImmuneSpecies(true)));
+				pop.add(new Population(true, PopulationType.ENFORCER, PopulationDensity.OCCASIONAL, Subspecies.getDominionStormImmuneSpecies(true, Subspecies.HUMAN)));
 			} else {
 				pop.add(new Population(true, PopulationType.CROWD, PopulationDensity.DENSE, Subspecies.getWorldSpecies(WorldType.DOMINION, true)));
-				pop.add(new Population(true, PopulationType.ENFORCER, PopulationDensity.SEVERAL, Subspecies.getWorldSpecies(WorldType.DOMINION, true, Subspecies.HUMAN)));
+				pop.add(new Population(false, PopulationType.ENFORCER, PopulationDensity.OCCASIONAL, Subspecies.getWorldSpecies(WorldType.DOMINION, true, Subspecies.HUMAN)));
+				pop.add(new Population(true, PopulationType.CENTAUR_CARTS, PopulationDensity.NUMEROUS, Util.newHashMapOfValues(new Value<>(Subspecies.CENTAUR, SubspeciesSpawnRarity.FOUR_COMMON))));
 			}
 			
 			return pop;
@@ -275,7 +276,7 @@ public class PlaceType {
 		public List<Population> getPopulation() {
 			if(Main.game.getCurrentWeather()!=Weather.MAGIC_STORM) {
 				List<Population> pop = Util.newArrayListOfValues(new Population(true, PopulationType.CROWD, PopulationDensity.DENSE, Subspecies.getWorldSpecies(WorldType.DOMINION, true)));
-				pop.add(new Population(true, PopulationType.ENFORCER, PopulationDensity.SEVERAL, Subspecies.getWorldSpecies(WorldType.DOMINION, true, Subspecies.HUMAN)));
+				pop.add(new Population(false, PopulationType.ENFORCER, PopulationDensity.OCCASIONAL, Subspecies.getWorldSpecies(WorldType.DOMINION, true, Subspecies.HUMAN)));
 				pop.add(new Population(true, PopulationType.CENTAUR_CARTS, PopulationDensity.NUMEROUS, Util.newHashMapOfValues(new Value<>(Subspecies.CENTAUR, SubspeciesSpawnRarity.FOUR_COMMON))));
 				return pop;
 				
@@ -911,6 +912,10 @@ public class PlaceType {
 			} else {
 				return BraxOffice.INTERIOR_BRAX;
 			}
+		}
+		@Override
+		public boolean isDangerous() {
+			return !Main.game.getPlayer().isQuestProgressGreaterThan(QuestLine.MAIN, Quest.MAIN_1_C_WOLFS_DEN);
 		}
 	}.initDangerous()
 	.initWeatherImmune();
@@ -1716,6 +1721,17 @@ public class PlaceType {
 			).initItemsPersistInTile()
 			.initWeatherImmune();
 	
+	public static final AbstractPlaceType LILAYA_HOME_STAIR_UP_SECONDARY = new AbstractPlaceType(
+			"Staircase",
+			"This staircase, while smaller than the main one near the mansion's entrance, performs the same purpose of connecting the ground and first floor of Lilaya's home.",
+			"dominion/lilayasHome/stairsUpSecondary",
+			PresetColour.BASE_GREEN_LIME,
+			LilayaHomeGeneric.STAIRCASE_UP_SECONDARY,
+			null,
+			"in Lilaya's Home"
+			).initItemsPersistInTile()
+			.initWeatherImmune();
+	
 	public static final AbstractPlaceType LILAYA_HOME_ENTRANCE_HALL = new AbstractPlaceType(
 			"Entrance Hall",
 			"Fine paintings and marble busts line the walls of this grand entrance hall, while a huge crystal chandelier hangs from the double-height ceiling overhead.",
@@ -1820,7 +1836,17 @@ public class PlaceType {
 			"in Lilaya's Home"
 			).initItemsPersistInTile()
 			.initWeatherImmune();
-	
+
+	public static final AbstractPlaceType LILAYA_HOME_STAIR_DOWN_SECONDARY = new AbstractPlaceType(
+			"Staircase",
+			"This staircase, while smaller than the main one near the mansion's entrance, performs the same purpose of connecting the ground and first floor of Lilaya's home.",
+			"dominion/lilayasHome/stairsDownSecondary",
+			PresetColour.BASE_RED_LIGHT,
+			LilayaHomeGeneric.STAIRCASE_DOWN_SECONDARY,
+			null,
+			"in Lilaya's Home"
+			).initItemsPersistInTile()
+			.initWeatherImmune();
 	
 
 	
@@ -4194,7 +4220,7 @@ public class PlaceType {
 		@Override
 		public DialogueNode getDialogue(boolean withRandomEncounter, boolean forceEncounter) {
 			if(Main.game.getPlayer().isCaptive()) {
-				dialogue = RatWarrensCaptiveDialogue.STOCKS_NIGHT;
+				dialogue = RatWarrensCaptiveDialogue.CAPTIVE_NIGHT;
 			} else {
 				dialogue = RatWarrensDialogue.MILKING_ROOM;
 			}

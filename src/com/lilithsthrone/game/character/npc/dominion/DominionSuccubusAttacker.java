@@ -159,16 +159,6 @@ public class DominionSuccubusAttacker extends NPC {
 				"Although all demons have an extremely powerful libido, some suffer from it far more than others."
 				+ " While most are able to control their sexual desires, others, such as this [npc.race], struggle to think of anything but how to secure their next sexual conquest.");
 	}
-	
-	@Override
-	public void endSex() {
-		if(!isSlave()) {
-//			if(this.getGender()!=this.getGenderIdentity() && !this.isPregnant()) {
-//				this.setPendingTransformationToGenderIdentity(true);
-//			}
-			setPendingClothingDressing(true);
-		}
-	}
 
 	@Override
 	public boolean isClothingStealable() {
@@ -201,7 +191,7 @@ public class DominionSuccubusAttacker extends NPC {
 	// Combat:
 
 	@Override
-	public String getMainAttackDescription(int armRow, GameCharacter target, boolean isHit) {
+	public String getMainAttackDescription(int armRow, GameCharacter target, boolean isHit, boolean critical) {
 		if(!this.isSlave() && this.getMainWeapon(0)==null) {
 			if(this.isFeminine()) {
 				return UtilText.parse(this, target,
@@ -217,7 +207,7 @@ public class DominionSuccubusAttacker extends NPC {
 								"With a frustrated cry, [npc.Name] kicks out at [npc2.namePos] shins."));
 			}
 		}
-		return super.getMainAttackDescription(armRow, target, isHit);
+		return super.getMainAttackDescription(armRow, target, isHit, critical);
 	}
 
 	@Override

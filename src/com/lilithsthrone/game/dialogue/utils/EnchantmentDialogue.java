@@ -65,6 +65,8 @@ public class EnchantmentDialogue {
 	
 	private static StringBuilder inventorySB = new StringBuilder("");
 	
+	private static InventoryInteraction interactionInit;
+	
 	private static AbstractCoreItem ingredient = null;
 	private static AbstractCoreItem previousIngredient = null;
 	
@@ -90,10 +92,10 @@ public class EnchantmentDialogue {
 	private static boolean isEquipped = false;
 	private static GameCharacter isEquippedTo = null;
 	private static InventorySlot isEquippedIn = null;
-
+	
 	private static String inventoryView() {
 		inventorySB.setLength(0);
-
+		
 		ItemEffect effect = getCurrentEffect();
 		
 		int displaySlots = Math.max(32, 8*(int)Math.ceil(Math.max(ingredient.getEnchantmentEffect().getPrimaryModifiers().size(), ingredient.getEnchantmentEffect().getSecondaryModifiers(ingredient, primaryMod).size())/8f));
@@ -227,15 +229,22 @@ public class EnchantmentDialogue {
 					if((ingredient instanceof AbstractClothing)
 							|| (ingredient instanceof AbstractWeapon)
 							|| (ingredient instanceof Tattoo)) {
+						
+						
 						if(effect.getItemEffectType()==ItemEffectType.CLOTHING
 								|| effect.getItemEffectType()==ItemEffectType.WEAPON
 								|| effect.getItemEffectType()==ItemEffectType.TATTOO) {
 							if(effect.getPrimaryModifier()==TFModifier.CLOTHING_ATTRIBUTE || effect.getPrimaryModifier()==TFModifier.CLOTHING_MAJOR_ATTRIBUTE) {
 								int cost = Math.max(0, effect.getPotency().getClothingBonusValue());
-								if(effect.getSecondaryModifier()==TFModifier.CORRUPTION
-										|| effect.getSecondaryModifier()==TFModifier.FERTILITY
+								if(effect.getSecondaryModifier()==TFModifier.FERTILITY
 										|| effect.getSecondaryModifier()==TFModifier.VIRILITY) {
 									cost = 0;
+								} else if(effect.getSecondaryModifier()==TFModifier.CORRUPTION) {
+									if(effect.getPotency().isNegative()) {
+										cost = Math.abs(effect.getPotency().getClothingBonusValue());
+									} else {
+										cost = 0;
+									}
 								}
 								inventorySB.append("<br/>"
 										+ (cost>0
@@ -324,12 +333,16 @@ public class EnchantmentDialogue {
 								|| ie.getItemEffectType()==ItemEffectType.TATTOO) {
 							if(ie.getPrimaryModifier()==TFModifier.CLOTHING_ATTRIBUTE
 									|| ie.getPrimaryModifier()==TFModifier.CLOTHING_MAJOR_ATTRIBUTE) {
-								if(effect.getSecondaryModifier()==TFModifier.CORRUPTION
-										|| effect.getSecondaryModifier()==TFModifier.FERTILITY
-										|| effect.getSecondaryModifier()==TFModifier.VIRILITY) {
-									cost = 0;
+								if(ie.getSecondaryModifier()==TFModifier.FERTILITY
+										|| ie.getSecondaryModifier()==TFModifier.VIRILITY) {
+									cost += 0;
+								} else if(ie.getSecondaryModifier()==TFModifier.CORRUPTION) {
+									if(ie.getPotency().isNegative()) {
+										cost += Math.abs(ie.getPotency().getClothingBonusValue());
+									}
+								} else {
+									cost += Math.max(0, ie.getPotency().getClothingBonusValue());
 								}
-								cost += Math.max(0, ie.getPotency().getClothingBonusValue());
 							}
 						}
 						
@@ -407,6 +420,8 @@ public class EnchantmentDialogue {
 	}
 	
 	public static DialogueNode getEnchantmentMenu(AbstractCoreItem item, GameCharacter tattooBearer, InventorySlot tattooSlot) {
+		interactionInit = InventoryDialogue.getNPCInventoryInteraction();
+		
 		EnchantmentDialogue.effects.clear();
 		EnchantmentDialogue.resetEnchantmentVariables();
 		EnchantmentDialogue.initModifiers(item, tattooBearer, tattooSlot);
@@ -425,8 +440,6 @@ public class EnchantmentDialogue {
 			InventoryDialogue.setNPCInventoryInteraction(InventoryInteraction.FULL_MANAGEMENT);
 			if(tattooBearer instanceof NPC) {
 				InventoryDialogue.setInventoryNPC((NPC) tattooBearer);
-			} else {
-				InventoryDialogue.setInventoryNPC(null);
 			}
 		}
 		@Override
@@ -488,6 +501,7 @@ public class EnchantmentDialogue {
 					public void effects() {
 						Main.game.setResponseTab(1);
 						EnchantmentDialogue.resetEnchantmentVariables();
+						InventoryDialogue.setNPCInventoryInteraction(interactionInit);
 					}
 				};
 				

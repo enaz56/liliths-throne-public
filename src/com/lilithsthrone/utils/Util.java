@@ -139,6 +139,15 @@ public class Util {
 //		System.out.println(c);
 		return "#"+c;
 	}
+
+	public static Color newColour(String colourString) {
+		int hex = Integer.valueOf(colourString.substring(1), 16);
+		return newColour((hex & 0xFF0000) >> 16, (hex & 0xFF00) >> 8, (hex & 0xFF));
+//		return Color.color(
+//				Integer.valueOf(colourString.substring(1, 3), 16) / 255,
+//				Integer.valueOf(colourString.substring(3, 5), 16) / 255,
+//				Integer.valueOf(colourString.substring(5, 7), 16) / 255);
+	}
 	
 	public static Color newColour(double r, double g, double b) {
 		return Color.color(r / 255, g / 255, b / 255);
@@ -1043,6 +1052,8 @@ public class Util {
 
 		slovenlySpeechReplacementMap.put("Have not", "'Aven't");
 		slovenlySpeechReplacementMap.put("have not", "'aven't");
+		slovenlySpeechReplacementMap.put("Haven't", "'Aven't");
+		slovenlySpeechReplacementMap.put("haven't", "'aven't");
 		slovenlySpeechReplacementMap.put("Have", "'Ave");
 		slovenlySpeechReplacementMap.put("have", "'ave");
 
@@ -1096,6 +1107,7 @@ public class Util {
 			<br/>We're -> We's
 			<br/>So that -> so's
 			<br/>Have not -> 'aven't
+			<br/>Haven't -> 'aven't
 			<br/>Have -> 'ave
 			<br/>My -> Me
 			<br/>That -> Dat
@@ -1153,7 +1165,7 @@ public class Util {
 			if(openingCurly==closingCurly && openingAngular==closingAngular && openingSquare==closingSquare) {
 				if(sentence.charAt(i)=='s' || sentence.charAt(i)=='z') {
 					modifiedSentence.append(">i/<ht>i<");
-				} else if(sentence.charAt(i)=='S' || sentence.charAt(i)=='Z') {
+				} else if((sentence.charAt(i)=='S' && (i-1>=0 && sentence.charAt(i-1)!='L')) || sentence.charAt(i)=='Z') {
 					modifiedSentence.append(">i/<hT>i<");
 				} else {
 					modifiedSentence.append(sentence.charAt(i));
@@ -1291,6 +1303,8 @@ public class Util {
 				distance = newDistance;
 			}
 		}
+		System.err.println("Warning: getClosestStringMatch() did not find an exact match for '"+input+"'; returning '"+closestString+"' instead.");
+//		throw new IllegalArgumentException();
 		return closestString;
 	}
 	

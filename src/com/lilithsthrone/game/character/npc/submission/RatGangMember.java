@@ -103,10 +103,6 @@ public class RatGangMember extends NPC {
 				}
 			}
 			
-//			if(Math.random()<0.05) { //5% chance for the NPC to be a half-demon
-//				this.setBody(CharacterUtils.generateHalfDemonBody(this, gender, Subspecies.getFleshSubspecies(this), true), true);
-//			}
-	
 			setName(Name.getRandomTriplet(this.getRace()));
 			this.setPlayerKnowsName(false);
 			this.setGenericName("gang-member");
@@ -222,7 +218,7 @@ public class RatGangMember extends NPC {
 	public Response endCombat(boolean applyEffects, boolean victory) {
 		if(victory) {
 			if(Main.game.getDialogueFlags().hasFlag(DialogueFlagValue.ratWarrensCaptiveAttemptingEscape)) {
-				return new Response("", "", RatWarrensCaptiveDialogue.STOCKS_ESCAPE_FIGHT_VICTORY);
+				return new Response("", "", RatWarrensCaptiveDialogue.CAPTIVE_ESCAPE_FIGHT_VICTORY);
 			}
 			return new Response("", "", RatWarrensDialogue.GUARD_COMBAT_VICTORY) {
 				@Override
@@ -259,7 +255,7 @@ public class RatGangMember extends NPC {
 			
 		} else {
 			if(Main.game.getDialogueFlags().hasFlag(DialogueFlagValue.ratWarrensCaptiveAttemptingEscape)) {
-				return new Response("", "", RatWarrensCaptiveDialogue.STOCKS_ESCAPE_FIGHT_DEFEAT) {
+				return new Response("", "", RatWarrensCaptiveDialogue.CAPTIVE_ESCAPE_FIGHT_DEFEAT) {
 					@Override
 					public void effects() {
 						RatWarrensDialogue.applyCombatDefeatFlagsReset();

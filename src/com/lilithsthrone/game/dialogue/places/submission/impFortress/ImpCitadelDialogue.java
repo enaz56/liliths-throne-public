@@ -523,7 +523,7 @@ public class ImpCitadelDialogue {
 		public String getResponseTabTitle(int index) {
 			if(!getImpGroup().isEmpty()) {
 				if(index==0) {
-					return "Standard";
+					return "Interactions";
 					
 				} else if(index==1) {
 					return "Inventories";
@@ -666,7 +666,7 @@ public class ImpCitadelDialogue {
 						
 					} else if (index == 3) {
 						return new ResponseSex("Solo sex (Gentle)",
-								UtilText.parse(getMainCompanion(), "Tell [npc.name] to stand to one side and watch as you have sex with the imps. (Start sex in the gentle pace.)"),
+								UtilText.parse(getMainCompanion(), "Tell [npc.name] to stand to one side and watch as you have sex with the imps."),
 								true,
 								false,
 								Util.newArrayListOfValues(Main.game.getPlayer()),
@@ -678,7 +678,7 @@ public class ImpCitadelDialogue {
 						
 					} else if (index == 4) {
 						return new ResponseSex("Solo sex (Rough)",
-								UtilText.parse(getMainCompanion(), "Tell [npc.name] to stand to one side and watch as you have sex with the imps. (Start sex in the rough pace.)"),
+								UtilText.parse(getMainCompanion(), "Tell [npc.name] to stand to one side and watch as you have sex with the imps."),
 								true,
 								false,
 								Util.newArrayListOfValues(Main.game.getPlayer()),
@@ -2694,7 +2694,7 @@ public class ImpCitadelDialogue {
 		public Response getResponse(int responseTab, int index) {
 			/* It's ok if some are randomised. I don't mind players save/loading to try to get different events.
 			(Maximum times/day)Events:
-				(1) Fucked by demon - unjinxes clothing one at a time
+				(1) Fucked by demon - unseals clothing one at a time
 				(-) Fucked by imps
 				(1) Siren summon
 					Use as trophy foot-rest

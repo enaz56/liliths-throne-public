@@ -31,10 +31,10 @@ import com.lilithsthrone.game.character.body.valueEnums.BreastShape;
 import com.lilithsthrone.game.character.body.valueEnums.CoveringPattern;
 import com.lilithsthrone.game.character.body.valueEnums.Femininity;
 import com.lilithsthrone.game.character.effects.AbstractPerk;
+import com.lilithsthrone.game.character.effects.AbstractStatusEffect;
 import com.lilithsthrone.game.character.effects.Perk;
 import com.lilithsthrone.game.character.effects.PerkCategory;
 import com.lilithsthrone.game.character.effects.PerkManager;
-import com.lilithsthrone.game.character.effects.StatusEffect;
 import com.lilithsthrone.game.character.fetishes.Fetish;
 import com.lilithsthrone.game.character.fetishes.FetishDesire;
 import com.lilithsthrone.game.character.fetishes.FetishLevel;
@@ -53,6 +53,8 @@ import com.lilithsthrone.game.inventory.clothing.AbstractClothing;
 import com.lilithsthrone.game.inventory.enchanting.ItemEffect;
 import com.lilithsthrone.game.inventory.enchanting.LoadedEnchantment;
 import com.lilithsthrone.game.inventory.enchanting.TFEssence;
+import com.lilithsthrone.game.occupantManagement.slave.SlaveJob;
+import com.lilithsthrone.game.occupantManagement.slave.SlaveJobFlag;
 import com.lilithsthrone.main.Main;
 import com.lilithsthrone.rendering.CachedImage;
 import com.lilithsthrone.rendering.ImageCache;
@@ -68,7 +70,7 @@ import com.lilithsthrone.world.WorldType;
 
 /**
  * @since 0.1.0
- * @version 0.3.4
+ * @version 0.3.8.6
  * @author Innoxia
  */
 public class TooltipInformationEventListener implements EventListener {
@@ -82,7 +84,7 @@ public class TooltipInformationEventListener implements EventListener {
 	private boolean availableForSelection = false;
 	
 	private GameCharacter owner;
-	private StatusEffect statusEffect;
+	private AbstractStatusEffect statusEffect;
 	private AbstractPerk perk;
 	private AbstractPerk levelUpPerk;
 	private int perkRow;
@@ -98,6 +100,7 @@ public class TooltipInformationEventListener implements EventListener {
 	private Cell cell;
 	private GameCharacter moneyTransferTarget;
 	private int moneyTransferPercentage;
+	private SlaveJob slaveJob;
 	
 	private static StringBuilder tooltipSB  = new StringBuilder();
 	
@@ -114,18 +117,20 @@ public class TooltipInformationEventListener implements EventListener {
 		if (statusEffect != null) {
 
 			// I hate this. If only JavaFX's height detection and resizing methods actually worked...
-			int size = statusEffect.getModifiersAsStringList(owner).size();
+			int size = statusEffect.getModifiersAsStringList(owner).size() + statusEffect.getCombatMoves().size() + statusEffect.getSpells().size();
 			int yIncrease = (size > 4 ? size - 4 : 0)
 								+ (owner.hasStatusEffect(statusEffect)?(owner.getStatusEffectDuration(statusEffect) == -1 ? 0 : 2):0);
 			int spacingHeight = 0;
 			
-			List<String> additionalDescriptions = statusEffect.getAdditionalDescriptions(owner);
+			List<Value<Integer, String>> additionalDescriptions = statusEffect.getAdditionalDescriptions(owner);
 			if(additionalDescriptions!=null && !additionalDescriptions.isEmpty()) {
-				yIncrease += 4 * additionalDescriptions.size();
-				spacingHeight += additionalDescriptions.size() * 8;
+				for(Value<Integer, String> value : additionalDescriptions) {
+					yIncrease += 1 + value.getKey();
+				}
+				spacingHeight += additionalDescriptions.size() * 4;
 			}
 				
-			Main.mainController.setTooltipSize(360, 284 + spacingHeight + (yIncrease * LINE_HEIGHT));
+			Main.mainController.setTooltipSize(360, 278 + spacingHeight + (yIncrease * LINE_HEIGHT));
 			
 			
 			// Title:
@@ -135,14 +140,23 @@ public class TooltipInformationEventListener implements EventListener {
 
 			// Attribute modifiers:
 			tooltipSB.append("<div class='subTitle-picture'>");// style='white-space: nowrap'>");
-				if (!statusEffect.getModifiersAsStringList(owner).isEmpty()) {
-					int i=0;
+				boolean effectsFound = false;
+				if(!statusEffect.getModifiersAsStringList(owner).isEmpty()) {
 					for (String s : statusEffect.getModifiersAsStringList(owner)) {
-						tooltipSB.append((i!=0?"<br/>":"") + s);
-						i++;
+						tooltipSB.append((effectsFound?"<br/>":"") + UtilText.parse(owner, s));
+						effectsFound =true;
 					}
-					
-				} else {
+				}
+				for (CombatMove cm : statusEffect.getCombatMoves()) {
+					tooltipSB.append((effectsFound?"<br/>":"")+"[style.boldExcellent(Grants)] [style.boldCombat(Move)]: "+Util.capitaliseSentence(cm.getName(0, owner)));
+					effectsFound =true;
+				}
+				for (Spell spell : statusEffect.getSpells()) {
+					tooltipSB.append((effectsFound?"<br/>":"")+"[style.boldExcellent(Grants)] [style.boldSpell(Spell)]<b>:</b> <b style='color:"+spell.getSpellSchool().getColour().toWebHexString()+";'>"+Util.capitaliseSentence(spell.getName())+"</b>");
+					effectsFound =true;
+				}
+				
+				if(!effectsFound) {
 					tooltipSB.append("<span style='color:" + PresetColour.TEXT_GREY.toWebHexString() + ";'>No bonuses</span>");
 				}
 			tooltipSB.append("</div>");
@@ -156,9 +170,9 @@ public class TooltipInformationEventListener implements EventListener {
 							+ "</div>");
 			
 			if(additionalDescriptions!=null && !additionalDescriptions.isEmpty()) {
-				for(String desc : additionalDescriptions) {
-					tooltipSB.append("<div class='description' style='height:64px'>"
-							+ desc
+				for(Value<Integer, String> desc : additionalDescriptions) {
+					tooltipSB.append("<div class='description' style='text-align:center; line-height:"+LINE_HEIGHT+"px; height:"+(16+(desc.getKey()*LINE_HEIGHT))+"px'>"
+							+ desc.getValue()
 						+ "</div>");
 				}
 			}
@@ -301,7 +315,12 @@ public class TooltipInformationEventListener implements EventListener {
 			tooltipSB.append("<div class='picture'>" + levelUpPerk.getSVGString(owner) + "</div>");
 
 			// Description:
-			tooltipSB.append("<div class='description'>" + UtilText.parse(owner, levelUpPerk.getDescription(owner)) + "</div>");
+//			boolean booly1 = PerkManager.MANAGER.isPerkEndOfTreeBranch(owner, perkRow, levelUpPerk, true);
+//			boolean booly2 = PerkManager.MANAGER.isPerkEndOfTreeBranch(owner, perkRow, levelUpPerk, false);
+			tooltipSB.append("<div class='description'>"
+//					+ booly1+", "+booly2+"<br/>"
+					+ UtilText.parse(owner, levelUpPerk.getDescription(owner))
+			+ "</div>");
 			
 			if(availableForSelection) {
 				if(levelUpPerk.isEquippableTrait()) {
@@ -392,7 +411,7 @@ public class TooltipInformationEventListener implements EventListener {
 //			tooltipSB.append("<br/>Cooldown: "+"<span style='color:"+(cooldown==0?PresetColour.GENERIC_MINOR_GOOD:PresetColour.GENERIC_MINOR_BAD).toWebHexString()+";'>"+cooldown+(cooldown==1?" turn":" turns")+"</span>");
 			
 			if(move.getStatusEffects(owner, owner, false)!=null) {
-				for(Entry<StatusEffect, Integer> entry : move.getStatusEffects(owner, owner, false).entrySet()) {
+				for(Entry<AbstractStatusEffect, Integer> entry : move.getStatusEffects(owner, owner, false).entrySet()) {
 					tooltipSB.append("<br/>Applies: <span style='color:"+entry.getKey().getColour().toWebHexString()+";'>"+Util.capitaliseSentence(entry.getKey().getName(null))+"</span> for "+entry.getValue()+(entry.getValue()==1?" turn":" turns"));
 				}
 			}
@@ -646,14 +665,14 @@ public class TooltipInformationEventListener implements EventListener {
 			Main.mainController.setTooltipContent(UtilText.parse(tooltipSB.toString()));
 
 		} else if (attribute != null) {
-			
 			if (attribute == Attribute.MAJOR_PHYSIQUE
 					|| attribute == Attribute.MAJOR_ARCANE
 					|| attribute == Attribute.MAJOR_CORRUPTION
 					|| attribute == Attribute.AROUSAL
 					|| attribute == Attribute.LUST) {
-				StatusEffect currentAttributeStatusEffect=null;
-				int minimumLevelValue=0, maximumLevelValue=0;
+				AbstractStatusEffect currentAttributeStatusEffect=null;
+				int minimumLevelValue=0;
+				int maximumLevelValue=0;
 				
 				if(attribute == Attribute.MAJOR_PHYSIQUE) {
 					currentAttributeStatusEffect = PhysiqueLevel.getPhysiqueLevelFromValue(owner.getAttributeValue(Attribute.MAJOR_PHYSIQUE)).getRelatedStatusEffect();
@@ -680,7 +699,6 @@ public class TooltipInformationEventListener implements EventListener {
 					minimumLevelValue = LustLevel.getLustLevelFromValue(owner.getAttributeValue(Attribute.LUST)).getMinimumValue();
 					maximumLevelValue = LustLevel.getLustLevelFromValue(owner.getAttributeValue(Attribute.LUST)).getMaximumValue();
 				}
-				
 				
 				int yIncrease = (currentAttributeStatusEffect.getModifiersAsStringList(owner).size() > 4 ? currentAttributeStatusEffect.getModifiersAsStringList(owner).size() - 4 : 0)
 						+ (owner.hasStatusEffect(currentAttributeStatusEffect)?(owner.getStatusEffectDuration(currentAttributeStatusEffect) == -1 ? 0 : 2):0);
@@ -743,7 +761,6 @@ public class TooltipInformationEventListener implements EventListener {
 				// Special tooltip for experience/transformation combo:
 
 				if(owner.isRaceConcealed()) {
-					
 					tooltipSB.setLength(0);
 					tooltipSB.append("<div class='title' style='color:" + PresetColour.RACE_UNKNOWN.toWebHexString() + ";'>"
 							+ "Unknown Race!"
@@ -860,7 +877,7 @@ public class TooltipInformationEventListener implements EventListener {
 					} else {
 						tooltipSB.append(getBodyPartDiv(owner, "Face", owner.getFaceRace(), owner.getFaceCovering(), owner.isFaceBestial()));
 					}
-					tooltipSB.append(getBodyPartDiv(owner, "Torso", owner.getSkinRace(), owner.getSkinCovering(), owner.isSkinBestial(),
+					tooltipSB.append(getBodyPartDiv(owner, "Torso", owner.getSkinRace(), owner.getTorsoCovering(), owner.isTorsoBestial(),
 							(owner.isSizeDifferenceShorterThan(Main.game.getPlayer())
 							?"<span style='color:"+PresetColour.BODY_SIZE_ONE.toWebHexString()+";'>"
 							:(owner.isSizeDifferenceTallerThan(Main.game.getPlayer())
@@ -999,7 +1016,7 @@ public class TooltipInformationEventListener implements EventListener {
 
 			} else {
 				Main.mainController.setTooltipSize(360, 234);
-
+				
 				Main.mainController.setTooltipContent(UtilText.parse(
 						"<div class='title' style='color:" + attribute.getColour().toWebHexString() + ";'>" + Util.capitaliseSentence(attribute.getName()) + "</div>"
 
@@ -1080,19 +1097,19 @@ public class TooltipInformationEventListener implements EventListener {
 							+ owner.getEssenceCount(TFEssence.ARCANE)
 						+ "</div>"
 						
-						+ extraAttributeBonus(owner, Attribute.MAJOR_PHYSIQUE)
-						+ extraAttributeBonus(owner, Attribute.MAJOR_ARCANE)
-						+ extraAttributeBonus(owner, Attribute.MAJOR_CORRUPTION)
-						+ extraAttributeBonus(owner, Attribute.CRITICAL_DAMAGE)
+						+ getAttributeDiv(owner, Attribute.MAJOR_PHYSIQUE)
+						+ getAttributeDiv(owner, Attribute.MAJOR_ARCANE)
+						+ getAttributeDiv(owner, Attribute.MAJOR_CORRUPTION)
+						+ getAttributeDiv(owner, Attribute.CRITICAL_DAMAGE)
 						
-						+ extraAttributeBonus(owner, Attribute.SPELL_COST_MODIFIER)
-						+ extraAttributeBonus(owner, Attribute.DAMAGE_SPELLS)
+						+ getAttributeDiv(owner, Attribute.SPELL_COST_MODIFIER)
+						+ getAttributeDiv(owner, Attribute.DAMAGE_SPELLS)
 						
-						+ extraAttributeBonus(owner, Attribute.DAMAGE_UNARMED)
-						+ extraAttributeBonus(owner, Attribute.DAMAGE_MELEE_WEAPON)
-						+ extraAttributeBonus(owner, Attribute.DAMAGE_RANGED_WEAPON)
+						+ getAttributeDiv(owner, Attribute.DAMAGE_UNARMED)
+						+ getAttributeDiv(owner, Attribute.DAMAGE_MELEE_WEAPON)
+						+ getAttributeDiv(owner, Attribute.DAMAGE_RANGED_WEAPON)
 						
-						+ extraAttributeBonus(owner, Attribute.ENERGY_SHIELDING)
+						+ getAttributeDiv(owner, Attribute.ENERGY_SHIELDING)
 	
 						// Header:
 						+ "<div class='subTitle-third combatValue' style='padding:2px; margin:2px 1%; width:31%;'>"
@@ -1106,14 +1123,14 @@ public class TooltipInformationEventListener implements EventListener {
 						+ "</div>"
 	
 						// Values:
-						+ extraAttributeTableRow(owner, "Physical", Attribute.DAMAGE_PHYSICAL, Attribute.RESISTANCE_PHYSICAL)
-						+ extraAttributeTableRow(owner, "Fire", Attribute.DAMAGE_FIRE, Attribute.RESISTANCE_FIRE)
-						+ extraAttributeTableRow(owner, "Cold", Attribute.DAMAGE_ICE, Attribute.RESISTANCE_ICE)
-						+ extraAttributeTableRow(owner, "Poison", Attribute.DAMAGE_POISON, Attribute.RESISTANCE_POISON)
-						+ extraAttributeTableRow(owner, "Seduction", Attribute.DAMAGE_LUST, Attribute.RESISTANCE_LUST)
+						+ getAttributeTableRowDiv(owner, "Physical", Attribute.DAMAGE_PHYSICAL, Attribute.RESISTANCE_PHYSICAL)
+						+ getAttributeTableRowDiv(owner, "Fire", Attribute.DAMAGE_FIRE, Attribute.RESISTANCE_FIRE)
+						+ getAttributeTableRowDiv(owner, "Cold", Attribute.DAMAGE_ICE, Attribute.RESISTANCE_ICE)
+						+ getAttributeTableRowDiv(owner, "Poison", Attribute.DAMAGE_POISON, Attribute.RESISTANCE_POISON)
+						+ getAttributeTableRowDiv(owner, "Seduction", Attribute.DAMAGE_LUST, Attribute.RESISTANCE_LUST)
 						
-						+ extraAttributeBonus(owner, Attribute.FERTILITY)
-						+ extraAttributeBonus(owner, Attribute.VIRILITY)));
+						+ getAttributeDiv(owner, Attribute.FERTILITY)
+						+ getAttributeDiv(owner, Attribute.VIRILITY)));
 //			}
 			
 			Main.mainController.setTooltipContent(UtilText.parse(tooltipSB.toString()));
@@ -1171,8 +1188,7 @@ public class TooltipInformationEventListener implements EventListener {
 			Main.mainController.setTooltipContent(UtilText.parse(tooltipSB.toString()));
 
 		} else if(concealedSlot!=null) {
-
-			Map<InventorySlot, List<AbstractClothing>> concealedSlots = RenderingEngine.getCharacterToRender().getInventorySlotsConcealed();
+			Map<InventorySlot, List<AbstractClothing>> concealedSlots = RenderingEngine.getCharacterToRender().getInventorySlotsConcealed(Main.game.getPlayer());
 			
 			List<AbstractClothing> clothingVisible = concealedSlots.get(concealedSlot).stream().filter(clothing -> !concealedSlots.containsKey(clothing.getSlotEquippedTo())).collect(Collectors.toList());
 			
@@ -1189,9 +1205,38 @@ public class TooltipInformationEventListener implements EventListener {
 										:"This slot is currently hidden from view by [npc.namePos] <b>"+Util.clothesToStringList(clothingVisible, false)+"</b>.")))
 					+ "</div>"));
 			
-		} else if(loadedEnchantment!=null) {
-			//TODO
+		} else if(slaveJob!=null) {
+			int yIncrease = 0;
+
+			// Title:
+			tooltipSB.setLength(0);
+			tooltipSB.append("<div class='title'>"
+								+ Util.capitaliseSentence(slaveJob.getName(owner))
+							+ "</div>");
+
+			tooltipSB.append("<div class='description' style='height:28px; text-align:center;'>"
+								+ "[style.boldStamina(Hourly Stamina Cost:)]"
+								+ (slaveJob.getHourlyStaminaDrain()>0
+										?" [style.boldBad("
+										:" [style.boldGood(")+slaveJob.getHourlyStaminaDrain()+")]"
+							+ "</div>");
 			
+			tooltipSB.append("<div class='description' style='height:64px'>"
+								+ slaveJob.getDescription()
+							+ "</div>");
+
+			for(SlaveJobFlag flag : slaveJob.getFlags()) {
+				tooltipSB.append("<div class='description' style='height:48px'>"
+									+ "<b style='color:"+flag.getColour().toWebHexString()+";'>"+flag.getName()+":</b> "+flag.getDescription()
+								+ "</div>");
+				yIncrease++;
+			}
+			
+			Main.mainController.setTooltipSize(360, 172+(yIncrease*(48+8)));
+			
+			Main.mainController.setTooltipContent(UtilText.parse(tooltipSB.toString()));
+			
+		} else if(loadedEnchantment!=null) {
 			int yIncrease = 0;
 
 			// Title:
@@ -1449,60 +1494,108 @@ public class TooltipInformationEventListener implements EventListener {
 			+ "</div>";
 	}
 
-	private String extraAttributeTableRow(GameCharacter owner, String type, Attribute damage, Attribute resist) {
+	private String getAttributeDiv(GameCharacter owner, Attribute attribute) {
+		float value = owner.getAttributeValue(attribute);
+		
+		String valueForDisplay;
+		if(((int)value)==value) {
+			valueForDisplay = String.valueOf(((int)value));
+		} else {
+			valueForDisplay = String.valueOf(value);
+		}
+		if(attribute.isInfiniteAtUpperLimit() && value>=attribute.getUpperLimit()) {
+			valueForDisplay = UtilText.getInfinitySymbol(true);
+		}
+		if(attribute.isPercentage()){
+			valueForDisplay = (value>=0?"+":"")+valueForDisplay+"%";
+		}
+		
+		return "<div class='subTitle-half' style='padding:2px; margin:2px 1%; width:48%;'>"
+					+ "<span style='color:"+ attribute.getColour().toWebHexString() + ";'>"
+						+ Util.capitaliseSentence(attribute.getName())
+					+ "</span>"
+					+ "<br/>"
+					+ (value > attribute.getBaseValue()
+						? "<span style='color:" + (value==attribute.getUpperLimit()?PresetColour.GENERIC_GOOD:PresetColour.GENERIC_MINOR_GOOD).toWebHexString() + ";'>"
+						: (value < attribute.getBaseValue()
+								? "<span style='color:"+(value==attribute.getLowerLimit()?PresetColour.GENERIC_BAD:PresetColour.GENERIC_MINOR_BAD).toWebHexString()+";'>"
+								: "<span style='color:"+PresetColour.TEXT_GREY.toWebHexString()+";'>"))
+						+ valueForDisplay
+					+ "</span>"
+				+ "</div>";
+	}
+
+	private String getAttributeTableRowDiv(GameCharacter owner, String type, Attribute damage, Attribute resist) {
+		float damageValue = owner.getAttributeValue(damage);
+		float resistValue = owner.getAttributeValue(resist);
+		
+		String damageValueForDisplay;
+		if(((int)damageValue)==damageValue) {
+			damageValueForDisplay = String.valueOf(((int)damageValue));
+		} else {
+			damageValueForDisplay = String.valueOf(damageValue);
+		}
+		if(damage.isInfiniteAtUpperLimit() && damageValue>=damage.getUpperLimit()) {
+			damageValueForDisplay = UtilText.getInfinitySymbol(true);
+		}
+		if(damage.isPercentage()){
+			damageValueForDisplay = (damageValue>=0?"+":"")+damageValueForDisplay+"%";
+		}
+		
+		String resistValueForDisplay;
+		if(((int)resistValue)==resistValue) {
+			resistValueForDisplay = String.valueOf(((int)resistValue));
+		} else {
+			resistValueForDisplay = String.valueOf(resistValue);
+		}
+		if(resist.isInfiniteAtUpperLimit() && resistValue>=resist.getUpperLimit()) {
+			resistValueForDisplay = UtilText.getInfinitySymbol(true);
+		}
+		if(resist.isPercentage()){
+			resistValueForDisplay = (resistValue>=0?"+":"")+resistValueForDisplay+"%";
+		}
+		
 		return "<div class='subTitle-third combatValue' style='padding:2px; margin:2px 1%; width:31%;'>"
 				+ "<span style='color:" + damage.getColour().toWebHexString() + ";'>" + type + "</span>"
 				+ "</div>"
 				+ "<div class='subTitle-third combatValue' style='padding:2px; margin:2px 1%; width:31%;'>"
-					+ (owner.getAttributeValue(damage) > damage.getBaseValue()
-										? "<span style='color:" + PresetColour.GENERIC_GOOD.toWebHexString() + ";'>"
-										: (owner.getAttributeValue(damage) < damage.getBaseValue()
-												? "<span style='color:" + PresetColour.GENERIC_BAD.toWebHexString() + ";'>"
-												: ""))
-						+ owner.getAttributeValue(damage)
+					+ (damageValue > damage.getBaseValue()
+							? "<span style='color:" + (damageValue==damage.getUpperLimit()?PresetColour.GENERIC_GOOD:PresetColour.GENERIC_MINOR_GOOD).toWebHexString() + ";'>"
+							: (damageValue < damage.getBaseValue()
+									? "<span style='color:" + (damageValue==damage.getLowerLimit()?PresetColour.GENERIC_BAD:PresetColour.GENERIC_MINOR_BAD).toWebHexString() + ";'>"
+									: "<span style='color:"+PresetColour.TEXT_GREY.toWebHexString()+";'>"))
+						+ damageValueForDisplay
 					+ "</span>"
 				+ "</div>"
 				+ "<div class='subTitle-third combatValue' style='padding:2px; margin:2px 1%; width:31%;'>"
 					+ (resist == null
 							? "0.0"
-							: (owner.getAttributeValue(resist) > 0
-									? "<span style='color:" + PresetColour.GENERIC_GOOD.toWebHexString() + ";'>"
-									: (owner.getAttributeValue(resist) < 0
-											? "<span style='color:" + PresetColour.GENERIC_BAD.toWebHexString() + ";'>"
-											: ""))
-						+ owner.getAttributeValue(resist)
+							: (resistValue > 0
+									? "<span style='color:" + (resistValue==resist.getUpperLimit()?PresetColour.GENERIC_GOOD:PresetColour.GENERIC_MINOR_GOOD).toWebHexString() + ";'>"
+									: (resistValue < 0
+											? "<span style='color:" + (resistValue==resist.getLowerLimit()?PresetColour.GENERIC_BAD:PresetColour.GENERIC_MINOR_BAD).toWebHexString() + ";'>"
+											: "<span style='color:"+PresetColour.TEXT_GREY.toWebHexString()+";'>"))
+						+ resistValueForDisplay
 					+ "</span>")
 				+ "</div>";
-	}
-
-	private String extraAttributeBonus(GameCharacter owner, Attribute bonus) {
-		return "<div class='subTitle-half' style='padding:2px; margin:2px 1%; width:48%;'>"
-				+ "<span style='color:"+ bonus.getColour().toWebHexString() + ";'>"
-					+ Util.capitaliseSentence(bonus.getName())
-				+ "</span><br/>" + (owner.getAttributeValue(bonus) > bonus.getBaseValue()
-						? "<span style='color:" + PresetColour.GENERIC_GOOD.toWebHexString() + ";'>" : (owner.getAttributeValue(bonus) < bonus.getBaseValue() ? "<span style='color:" + PresetColour.GENERIC_BAD.toWebHexString() + ";'>" : ""))
-				+ owner.getAttributeValue(bonus) + "</span>" + "</div>";
 	}
 
 	public TooltipInformationEventListener setInformation(String title, String description) {
 		resetFields();
 		this.title = title;
 		this.description = description;
-
 		return this;
 	}
 
 	public TooltipInformationEventListener setInformation(String title, String description, int descriptionHeightOverride) {
 		setInformation(title, description);
 		this.descriptionHeightOverride = descriptionHeightOverride;
-
 		return this;
 	}
 
 	public TooltipInformationEventListener setWeather() {
 		resetFields();
 		weather = true;
-
 		return this;
 	}
 
@@ -1510,14 +1603,12 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		extraAttributes = true;
 		this.owner = owner;
-
 		return this;
 	}
-	public TooltipInformationEventListener setStatusEffect(StatusEffect statusEffect, GameCharacter owner) {
+	public TooltipInformationEventListener setStatusEffect(AbstractStatusEffect statusEffect, GameCharacter owner) {
 		resetFields();
 		this.statusEffect = statusEffect;
 		this.owner = owner;
-
 		return this;
 	}
 
@@ -1525,7 +1616,6 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.perk = perk;
 		this.owner = owner;
-
 		return this;
 	}
 	
@@ -1533,7 +1623,6 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.fetish = fetish;
 		this.owner = owner;
-
 		return this;
 	}
 
@@ -1542,7 +1631,6 @@ public class TooltipInformationEventListener implements EventListener {
 		fetishExperience = true;
 		this.fetish = fetish;
 		this.owner = owner;
-
 		return this;
 	}
 	
@@ -1551,7 +1639,6 @@ public class TooltipInformationEventListener implements EventListener {
 		this.desire = desire;
 		this.fetish = fetish;
 		this.owner = owner;
-
 		return this;
 	}
 
@@ -1561,7 +1648,6 @@ public class TooltipInformationEventListener implements EventListener {
 		this.perkRow = perkRow;
 		this.owner = owner;
 		this.availableForSelection = availableForSelection;
-
 		return this;
 	}
 
@@ -1569,7 +1655,6 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.spell = spell;
 		this.owner = owner;
-
 		return this;
 	}
 
@@ -1577,7 +1662,6 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.spellUpgrade = spellUpgrade;
 		this.owner = owner;
-
 		return this;
 	}
 
@@ -1585,7 +1669,6 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.attribute = attribute;
 		this.owner = owner;
-
 		return this;
 	}
 	
@@ -1593,28 +1676,24 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.owner = owner;
 		protection=true;
-
 		return this;
 	}
 	
 	public TooltipInformationEventListener setCopyInformation() {
 		resetFields();
 		copyInformation = true;
-
 		return this;
 	}
 
 	public TooltipInformationEventListener setConcealedSlot(InventorySlot concealedSlot) {
 		resetFields();
 		this.concealedSlot = concealedSlot;
-
 		return this;
 	}
 
 	public TooltipInformationEventListener setLoadedEnchantment(LoadedEnchantment loadedEnchantment) {
 		resetFields();
 		this.loadedEnchantment = loadedEnchantment;
-
 		return this;
 	}
 
@@ -1622,14 +1701,12 @@ public class TooltipInformationEventListener implements EventListener {
 		resetFields();
 		this.owner = owner;
 		this.move = move;
-		
 		return this;
 	}
 	
 	public TooltipInformationEventListener setCell(Cell cell) {
 		resetFields();
 		this.cell = cell;
-
 		return this;
 	}
 	
@@ -1638,6 +1715,13 @@ public class TooltipInformationEventListener implements EventListener {
 		this.owner = from;
 		this.moneyTransferTarget = to;
 		this.moneyTransferPercentage = moneyTransferPercentage;
+		return this;
+	}
+
+	public TooltipInformationEventListener setSlaveJob(SlaveJob slaveJob, GameCharacter owner) {
+		resetFields();
+		this.owner = owner;
+		this.slaveJob = slaveJob;
 		return this;
 	}
 	
@@ -1665,5 +1749,6 @@ public class TooltipInformationEventListener implements EventListener {
 		cell = null;
 		moneyTransferTarget = null;
 		moneyTransferPercentage = 0;
+		slaveJob = null;
 	}
 }
